@@ -4,6 +4,11 @@ import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import withAuth from '../hoc/withAuth';
 
+const routerFuture = {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true,
+};
+
 const SecretComponent = ({ label }) => (
     <div>Secret task area: {label}</div>
 );
@@ -13,7 +18,7 @@ const ProtectedSecretComponent = withAuth(SecretComponent);
 describe('withAuth', () => {
     it('renders the wrapped component when the user is authenticated', () => {
         render(
-            <MemoryRouter>
+            <MemoryRouter future={routerFuture}>
                 <AuthProvider initialAuthenticated>
                     <ProtectedSecretComponent label="Task 42" />
                 </AuthProvider>
@@ -25,7 +30,7 @@ describe('withAuth', () => {
 
     it('renders the restricted message when the user is not authenticated', () => {
         render(
-            <MemoryRouter>
+            <MemoryRouter future={routerFuture}>
                 <AuthProvider initialAuthenticated={false}>
                     <ProtectedSecretComponent label="Task 42" />
                 </AuthProvider>
@@ -39,7 +44,7 @@ describe('withAuth', () => {
 
     it('passes props through to the wrapped component', () => {
         render(
-            <MemoryRouter>
+            <MemoryRouter future={routerFuture}>
                 <AuthProvider initialAuthenticated>
                     <ProtectedSecretComponent label="Protected payload" />
                 </AuthProvider>

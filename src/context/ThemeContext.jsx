@@ -20,6 +20,10 @@ export const ThemeProvider = ({ children }) => {
             // Ignore storage access errors and fall back to system preference.
         }
 
+        if (typeof window.matchMedia !== 'function') {
+            return false;
+        }
+
         return window.matchMedia('(prefers-color-scheme: dark)').matches;
     });
 

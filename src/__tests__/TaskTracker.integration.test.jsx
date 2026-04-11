@@ -8,6 +8,10 @@ import { TaskProvider } from '../context/TaskContext';
 import { ThemeProvider } from '../context/ThemeContext';
 
 const API_URL = 'http://localhost:5000/tasks';
+const routerFuture = {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true,
+};
 
 const initialTasks = [
     {
@@ -46,7 +50,7 @@ let mockTasks = [];
 let requestLog = [];
 
 const renderTaskTracker = () => render(
-    <MemoryRouter>
+    <MemoryRouter future={routerFuture}>
         <AuthProvider>
             <ThemeProvider>
                 <TaskProvider>

@@ -4,6 +4,7 @@ import { Card, Button, Badge } from '../components/ui/Base';
 import LazyModal from '../lazy/LazyModal';
 import TaskForm from '../components/TaskForm';
 import { useModal } from '../hooks/useModal';
+import { useProfile } from '../context/ProfileContext';
 import { 
     CheckCircle2, 
     Clock, 
@@ -20,6 +21,8 @@ import { Link } from 'react-router-dom';
 const Home = () => {
     const { tasks, loading } = useTaskContext();
     const addModal = useModal(false);
+    const { profile } = useProfile();
+    const firstName = profile.name.split(' ')[0] || profile.name;
 
     if (loading) return <div className="animate-pulse flex flex-col gap-8">
         <div className="h-10 w-48 bg-gray-200 dark:bg-gray-800 rounded-lg"></div>
@@ -47,7 +50,7 @@ const Home = () => {
             {/* Welcome Header */}
             <div>
                 <h2 className="text-3xl font-bold font-outfit text-gray-900 dark:text-white mb-1">
-                    Welcome back, Arsen! 👋
+                    Welcome back, {firstName}! 👋
                 </h2>
                 <p className="text-gray-500 dark:text-gray-400">
                     You have <span className="text-accent font-semibold">{pendingToday.length} tasks</span> to focus on today.

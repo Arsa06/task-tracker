@@ -11,7 +11,7 @@ const Profile = lazy(() => import('./pages/Profile')); // Will create this soon
 const CalendarPage = lazy(() => import('./pages/Calendar')); // Will create this soon
 const TaskDetailPage = lazy(() => import('./pages/TaskDetailPage'));
 const TaskEditPage = lazy(() => import('./pages/TaskEditPage'));
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 const ProtectedTaskDetailPage = withAuth(TaskDetailPage);
 const ProtectedTaskEditPage = withAuth(TaskEditPage);
@@ -35,7 +35,7 @@ function App() {
                         <Route path="/tasks/:taskId/edit" element={<ProtectedTaskEditPage />} />
                         <Route path="/profile" element={<Profile />} />
                         <Route path="/calendar" element={<CalendarPage />} />
-                        <Route path="*" element={<NotFoundPage />} />
+                        <Route path="*" element={<NotFound />} />
                     </Routes>
                 </Suspense>
             </Layout>

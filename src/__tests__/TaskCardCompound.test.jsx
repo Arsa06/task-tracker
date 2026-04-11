@@ -9,6 +9,11 @@ jest.mock('../context/TaskContext', () => ({
     useTaskContext: jest.fn(),
 }));
 
+const routerFuture = {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true,
+};
+
 const mockTask = {
     id: 'task-1',
     title: 'Build tests',
@@ -30,7 +35,7 @@ describe('TaskCardCompound', () => {
 
     it('renders the header, body and footer sections', async () => {
         render(
-            <MemoryRouter>
+            <MemoryRouter future={routerFuture}>
                 <TaskCardCompound task={mockTask}>
                     <TaskCardCompound.Header />
                     <TaskCardCompound.Body />
@@ -51,7 +56,7 @@ describe('TaskCardCompound', () => {
         const onDelete = jest.fn();
 
         render(
-            <MemoryRouter>
+            <MemoryRouter future={routerFuture}>
                 <TaskCardCompound task={mockTask} onDelete={onDelete}>
                     <TaskCardCompound.Header />
                     <TaskCardCompound.Body />
@@ -76,7 +81,7 @@ describe('TaskCardCompound', () => {
         const onToggle = jest.fn();
 
         render(
-            <MemoryRouter>
+            <MemoryRouter future={routerFuture}>
                 <TaskCardCompound task={mockTask} onToggle={onToggle}>
                     <TaskCardCompound.Header />
                     <TaskCardCompound.Body />

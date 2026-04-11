@@ -8,6 +8,24 @@ jest.mock('../context/TaskContext', () => ({
     useTaskContext: jest.fn(),
 }));
 
+const createFutureDate = (daysAhead, hours, minutes) => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysAhead);
+    date.setHours(hours, minutes, 0, 0);
+
+    return date;
+};
+
+const formatDateForInput = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 describe('HybridTaskForm', () => {
     const mockAddTask = jest.fn();
     const mockUpdateTask = jest.fn();
@@ -33,6 +51,8 @@ describe('HybridTaskForm', () => {
 
     it('submits both controlled and uncontrolled fields together', async () => {
         const user = userEvent.setup();
+        const futureDeadline = createFutureDate(2, 10, 30);
+        const deadlineValue = formatDateForInput(futureDeadline);
 
         render(<HybridTaskForm />);
 
@@ -40,9 +60,9 @@ describe('HybridTaskForm', () => {
         await user.type(screen.getByLabelText(/Description/i), 'Cover the happy path and edge cases.');
         await user.selectOptions(screen.getByLabelText(/Category/i), 'Study');
         await user.selectOptions(screen.getByLabelText(/Priority/i), 'High');
-        await user.type(screen.getByLabelText(/Deadline/i), '2026-04-09T10:30');
+        await user.type(screen.getByLabelText(/Deadline/i), deadlineValue);
 
-        const expectedDeadline = new Date('2026-04-09T10:30').toISOString();
+        const expectedDeadline = futureDeadline.toISOString();
 
         await user.click(screen.getByRole('button', { name: /^Add Task$/i }));
 
@@ -60,7 +80,7 @@ describe('HybridTaskForm', () => {
 
     it('creates a task when the form is prefilled with a calendar deadline but has no id', async () => {
         const user = userEvent.setup();
-        const expectedDeadline = '2026-04-07T09:00:00.000Z';
+        const expectedDeadline = createFutureDate(2, 9, 0).toISOString();
 
         render(
             <HybridTaskForm
@@ -87,6 +107,7 @@ describe('HybridTaskForm', () => {
 
     it('prefills edit data and resets fields back to the initial values', async () => {
         const user = userEvent.setup();
+        const editDeadline = createFutureDate(3, 9, 0).toISOString();
 
         render(
             <HybridTaskForm
@@ -96,7 +117,7 @@ describe('HybridTaskForm', () => {
                     description: 'Persist this note.',
                     category: 'Work',
                     priority: 'Medium',
-                    deadline: '2026-04-10T09:00:00.000Z',
+                    deadline: editDeadline,
                     tags: ['existing'],
                 }}
                 buttonText="Save Changes"
@@ -122,6 +143,7 @@ describe('HybridTaskForm', () => {
 
     it('updates an existing task in edit mode', async () => {
         const user = userEvent.setup();
+        const editDeadline = createFutureDate(4, 9, 0).toISOString();
 
         render(
             <HybridTaskForm
@@ -131,7 +153,7 @@ describe('HybridTaskForm', () => {
                     description: 'Persist this note.',
                     category: 'Work',
                     priority: 'Medium',
-                    deadline: '2026-04-10T09:00:00.000Z',
+                    deadline: editDeadline,
                     tags: ['existing'],
                     completed: false,
                 }}
