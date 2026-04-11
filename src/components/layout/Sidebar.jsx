@@ -7,14 +7,15 @@ import {
     User, 
     ShieldCheck, 
     Moon, 
-    Sun,
-    PlusCircle
+    Sun
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 
 const Sidebar = () => {
     const { darkMode, toggleTheme } = useTheme();
+    const { isAuthenticated, toggleAuthentication } = useAuth();
     const today = new Date();
     
     // Mini Calendar Logic
@@ -92,7 +93,7 @@ const Sidebar = () => {
             </div>
 
             {/* Footer / Theme Toggle */}
-            <div className="p-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="space-y-3 p-4 border-t border-gray-100 dark:border-gray-800">
                 <button 
                     onClick={toggleTheme}
                     className="flex items-center justify-between w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-xl transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 group"
@@ -106,6 +107,18 @@ const Sidebar = () => {
                     <div className={`w-10 h-5 rounded-full relative transition-colors ${darkMode ? 'bg-accent' : 'bg-gray-400'}`}>
                         <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${darkMode ? 'left-6' : 'left-1'}`} />
                     </div>
+                </button>
+                <button
+                    type="button"
+                    onClick={toggleAuthentication}
+                    className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
+                        isAuthenticated
+                            ? 'border-accent/20 bg-accent/10 text-accent hover:bg-accent/15'
+                            : 'border-gray-200 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                    }`}
+                >
+                    <span>{isAuthenticated ? '\uD83D\uDD13 Logged in' : '\uD83D\uDD12 Logged out'}</span>
+                    <span className={`h-2.5 w-2.5 rounded-full ${isAuthenticated ? 'bg-accent' : 'bg-gray-400 dark:bg-gray-500'}`} />
                 </button>
             </div>
         </aside>

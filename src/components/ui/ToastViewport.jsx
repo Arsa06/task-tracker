@@ -5,8 +5,8 @@ import { CheckCircle2, X } from 'lucide-react';
 
 const toastVariants = {
     success: {
-        container: 'border-accent/30 bg-accent text-white shadow-accent/30',
-        icon: <CheckCircle2 size={18} className="text-white" />,
+        container: 'border-accent/40 bg-dark-card/95 text-white shadow-accent/20',
+        icon: <CheckCircle2 size={18} className="text-accent-light" />,
     },
 };
 

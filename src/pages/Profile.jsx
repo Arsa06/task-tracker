@@ -83,11 +83,11 @@ const Profile = () => {
     }, [editModal, updateProfile]);
 
     const handleShareProfile = useCallback(async () => {
-        const profileUrl = new URL('/profile', window.location.origin).toString();
+        const profileUrl = window.location.href;
 
         try {
             await copyTextToClipboard(profileUrl);
-            showToast('Profile link copied!');
+            showToast('Profile link copied! \uD83D\uDCCB', { duration: 3000 });
         } catch (error) {
             console.error('Unable to copy the profile URL.', error);
         }

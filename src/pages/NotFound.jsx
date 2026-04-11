@@ -17,9 +17,10 @@ const NotFound = () => {
                         <Compass size={32} className="text-accent-light" />
                     </div>
                     <p className="text-sm font-bold uppercase tracking-[0.3em] text-accent-light">Taskyy</p>
-                    <h1 className="mt-4 text-4xl font-bold font-outfit">404 - Page Not Found</h1>
+                    <p className="mt-4 text-7xl font-black tracking-tight text-accent-light sm:text-8xl">404</p>
+                    <h1 className="mt-3 text-4xl font-bold font-outfit">Page Not Found</h1>
                     <p className="mx-auto mt-4 max-w-lg text-sm leading-7 text-gray-300">
-                        The page you are looking for does not exist.
+                        Oops! The page you're looking for doesn't exist.
                     </p>
                     <div className="mt-8 flex justify-center">
                         <Button

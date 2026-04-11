@@ -1,1 +1,0 @@
-import{c as o,p as r,h as s}from"./index-2cYFo9pS.js";import{c as t}from"./parseISO-BwBUR0fh.js";const a=[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["path",{d:"M12 6v6l4 2",key:"mmk7yg"}]],e=o("clock",a);function y(c,i){return r(s(c,c),t(c))}export{e as C,y as i};

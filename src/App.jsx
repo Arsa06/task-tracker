@@ -4,17 +4,17 @@ import Layout from './components/layout/Layout';
 import { TaskProvider } from './context/TaskContext';
 import withAuth from './hoc/withAuth';
 
-// Lazy load pages
 const Home = lazy(() => import('./pages/Home'));
-const TaskTracker = lazy(() => import('./components/TaskTracker')); // Will update this soon
-const Profile = lazy(() => import('./pages/Profile')); // Will create this soon
-const CalendarPage = lazy(() => import('./pages/Calendar')); // Will create this soon
+const TaskTracker = lazy(() => import('./components/TaskTracker'));
+const Profile = lazy(() => import('./pages/Profile'));
+const CalendarPage = lazy(() => import('./pages/Calendar'));
 const TaskDetailPage = lazy(() => import('./pages/TaskDetailPage'));
 const TaskEditPage = lazy(() => import('./pages/TaskEditPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const ProtectedTaskDetailPage = withAuth(TaskDetailPage);
 const ProtectedTaskEditPage = withAuth(TaskEditPage);
+const ProtectedProfilePage = withAuth(Profile);
 
 const LoadingSpinner = () => (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -29,11 +29,10 @@ function App() {
                 <Suspense fallback={<LoadingSpinner />}>
                     <Routes>
                         <Route path="/" element={<Home />} />
-                        {/* More routes will be converted to better components soon */}
                         <Route path="/tasks" element={<TaskTracker />} />
                         <Route path="/tasks/:taskId" element={<ProtectedTaskDetailPage />} />
                         <Route path="/tasks/:taskId/edit" element={<ProtectedTaskEditPage />} />
-                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/profile" element={<ProtectedProfilePage />} />
                         <Route path="/calendar" element={<CalendarPage />} />
                         <Route path="*" element={<NotFound />} />
                     </Routes>
