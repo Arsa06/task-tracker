@@ -1,8 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Calendar, RotateCcw, Tag, Type, AlignLeft, X } from 'lucide-react';
 import { useTaskContext } from '../context/TaskContext';
+import { NotificationContext } from '../context/NotificationContext';
 import { useForm } from '../hooks/useForm';
+import { useAI } from '../hooks/useAI';
 import { Button, Badge } from '../components/ui/Base';
 
 const MIN_TITLE_LENGTH = 3;
@@ -45,8 +47,10 @@ const getCharactersRemainingLabel = (remainingCharacters) => (
 );
 
 const HybridTaskForm = ({ initialData = null, buttonText = 'Add Task', onSuccess }) => {
-    const { addTask, updateTask } = useTaskContext();
+    const { addTask, updateTask, isMutating } = useTaskContext();
+    const notificationApi = useContext(NotificationContext);
     const descriptionRef = useRef(null);
+    const suggestionRequestRef = useRef(0);
     const isEditMode = Boolean(initialData?.id);
     const initialDescription = useMemo(() => initialData?.description || '', [initialData]);
     const initialDeadlineValue = useMemo(
@@ -56,6 +60,14 @@ const HybridTaskForm = ({ initialData = null, buttonText = 'Add Task', onSuccess
     const [title, setTitle] = useState(initialData?.title || '');
     const [tagInput, setTagInput] = useState('');
     const [errors, setErrors] = useState(createErrorState());
+    const [aiSuggestion, setAiSuggestion] = useState(null);
+    const [aiSuggestionNotice, setAiSuggestionNotice] = useState('');
+    const notify = notificationApi?.notify;
+    const {
+        apiKeyConfigured,
+        suggestTaskMetadata,
+        suggestionLoading,
+    } = useAI();
 
     const {
         values,
@@ -68,6 +80,8 @@ const HybridTaskForm = ({ initialData = null, buttonText = 'Add Task', onSuccess
         setTitle(initialData?.title || '');
         setTagInput('');
         setErrors(createErrorState());
+        setAiSuggestion(null);
+        setAiSuggestionNotice('');
         setAllValues(buildAuxiliaryValues(initialData));
 
         if (descriptionRef.current) {
@@ -163,6 +177,8 @@ const HybridTaskForm = ({ initialData = null, buttonText = 'Add Task', onSuccess
         setTitle(initialData?.title || '');
         setTagInput('');
         setErrors(createErrorState());
+        setAiSuggestion(null);
+        setAiSuggestionNotice('');
         setAllValues(buildAuxiliaryValues(initialData));
 
         if (descriptionRef.current) {
@@ -192,10 +208,55 @@ const HybridTaskForm = ({ initialData = null, buttonText = 'Add Task', onSuccess
         }
     }, [addTag]);
 
+    useEffect(() => {
+        const trimmedTitle = title.trim();
+
+        if (trimmedTitle.length < MIN_TITLE_LENGTH) {
+            suggestionRequestRef.current += 1;
+            setAiSuggestion(null);
+            setAiSuggestionNotice('');
+            return undefined;
+        }
+
+        const currentRequestId = suggestionRequestRef.current + 1;
+        suggestionRequestRef.current = currentRequestId;
+
+        const timeoutId = window.setTimeout(async () => {
+            const nextSuggestion = await suggestTaskMetadata(trimmedTitle);
+
+            if (!nextSuggestion || suggestionRequestRef.current !== currentRequestId) {
+                return;
+            }
+
+            setAiSuggestion({
+                category: nextSuggestion.category,
+                priority: nextSuggestion.priority,
+                reason: nextSuggestion.reason,
+            });
+            setAiSuggestionNotice(nextSuggestion.notice || '');
+        }, 1000);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [suggestTaskMetadata, title]);
+
+    const applySuggestion = useCallback(() => {
+        if (!aiSuggestion) {
+            return;
+        }
+
+        setValue('category', aiSuggestion.category);
+        setValue('priority', aiSuggestion.priority);
+    }, [aiSuggestion, setValue]);
+
     const handleSubmit = useCallback(async (event) => {
         event.preventDefault();
 
         if (!validateForm()) {
+            if (notify) {
+                notify('Error: Please fill all required fields', { variant: 'error' });
+            }
             return;
         }
 
@@ -209,10 +270,19 @@ const HybridTaskForm = ({ initialData = null, buttonText = 'Add Task', onSuccess
             tags: values.tags,
         };
 
+        let savedTask;
+
         if (isEditMode) {
-            await updateTask({ ...initialData, ...taskPayload });
+            savedTask = await updateTask({ ...initialData, ...taskPayload });
         } else {
-            await addTask(taskPayload);
+            savedTask = await addTask(taskPayload);
+        }
+
+        if (!savedTask) {
+            return;
+        }
+
+        if (!isEditMode) {
             resetHybridForm();
         }
 
@@ -232,6 +302,7 @@ const HybridTaskForm = ({ initialData = null, buttonText = 'Add Task', onSuccess
         values.deadline,
         values.priority,
         values.tags,
+        notify,
     ]);
 
     const categories = ['Work', 'Study', 'Personal', 'Health'];
@@ -242,7 +313,7 @@ const HybridTaskForm = ({ initialData = null, buttonText = 'Add Task', onSuccess
         : undefined;
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6" data-testid="hybrid-task-form">
+        <form onSubmit={handleSubmit} className="space-y-6" data-testid="hybrid-task-form" aria-busy={isMutating}>
             <div className="space-y-4">
                 <div className="relative">
                     <label htmlFor="task-title" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-400">
@@ -275,6 +346,52 @@ const HybridTaskForm = ({ initialData = null, buttonText = 'Add Task', onSuccess
                         <p className="mt-2 text-sm font-medium text-red-500" role="alert">
                             {errors.title}
                         </p>
+                    )}
+                    {title.trim().length >= MIN_TITLE_LENGTH && (
+                        <div className="mt-3 rounded-2xl border border-accent/15 bg-accent/5 px-4 py-3">
+                            {suggestionLoading ? (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    AI is analyzing the title...
+                                </p>
+                            ) : aiSuggestion ? (
+                                <div className="space-y-3">
+                                    <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                        <span className="font-semibold text-accent">AI suggests:</span>
+                                        <Badge variant="primary">{aiSuggestion.category}</Badge>
+                                        <span className="text-gray-300 dark:text-gray-600">•</span>
+                                        <Badge
+                                            variant={
+                                                aiSuggestion.priority === 'High'
+                                                    ? 'danger'
+                                                    : aiSuggestion.priority === 'Medium'
+                                                        ? 'warning'
+                                                        : 'success'
+                                            }
+                                        >
+                                            {aiSuggestion.priority} priority
+                                        </Badge>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            onClick={applySuggestion}
+                                            className="rounded-2xl"
+                                        >
+                                            Apply suggestion
+                                        </Button>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            {aiSuggestion.reason}
+                                        </p>
+                                    </div>
+                                    {aiSuggestionNotice && (
+                                        <p className="text-xs text-orange-600 dark:text-orange-300">
+                                            {apiKeyConfigured ? aiSuggestionNotice : 'Demo AI mode is active until you add a Claude API key.'}
+                                        </p>
+                                    )}
+                                </div>
+                            ) : null}
+                        </div>
                     )}
                 </div>
 
@@ -410,16 +527,16 @@ const HybridTaskForm = ({ initialData = null, buttonText = 'Add Task', onSuccess
             </div>
 
             <div className="flex flex-wrap justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
-                <Button type="button" variant="secondary" onClick={resetHybridForm}>
+                <Button type="button" variant="secondary" onClick={resetHybridForm} disabled={isMutating}>
                     <RotateCcw size={16} />
                     Reset
                 </Button>
                 {onSuccess && (
-                    <Button type="button" variant="ghost" onClick={onSuccess}>
+                    <Button type="button" variant="ghost" onClick={onSuccess} disabled={isMutating}>
                         Cancel
                     </Button>
                 )}
-                <Button type="submit" className="px-8">
+                <Button type="submit" className="px-8" disabled={isMutating}>
                     {buttonText}
                 </Button>
             </div>

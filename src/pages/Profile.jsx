@@ -1,7 +1,7 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { Card, Button } from '../components/ui/Base';
-import { format } from 'date-fns';
+import { differenceInCalendarDays, format, startOfDay } from 'date-fns';
 import LazyModal from '../lazy/LazyModal';
 import ProfileEditForm from '../components/profile/ProfileEditForm';
 import { useModal } from '../hooks/useModal';
@@ -36,6 +36,27 @@ const getProfileInitials = (fullName) => {
     return parts.map((part) => part[0].toUpperCase()).join('');
 };
 
+const calculateCompletionStreak = (tasks) => {
+    const completedDays = [...new Set(tasks
+        .filter((task) => task.completed)
+        .map((task) => task.deadline || task.createdAt)
+        .filter(Boolean)
+        .map((dateValue) => startOfDay(new Date(dateValue)).getTime()))]
+        .sort((leftDay, rightDay) => rightDay - leftDay);
+
+    if (completedDays.length === 0) {
+        return 0;
+    }
+
+    return completedDays.slice(1).reduce((streak, dayValue, index) => {
+        if (differenceInCalendarDays(new Date(completedDays[index]), new Date(dayValue)) === 1) {
+            return streak + 1;
+        }
+
+        return streak;
+    }, 1);
+};
+
 const copyTextToClipboard = async (text) => {
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
@@ -65,12 +86,13 @@ const Profile = () => {
     const completed = tasks.filter(t => t.completed).length;
     const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
     const initials = useMemo(() => getProfileInitials(profile.name), [profile.name]);
+    const streak = useMemo(() => calculateCompletionStreak(tasks), [tasks]);
 
     const stats = [
         { label: 'Tasks Created', value: total, icon: <Edit3 className="text-blue-500" /> },
         { label: 'Completed', value: completed, icon: <CheckCircle2 className="text-green-500" /> },
         { label: 'Completion Rate', value: `${rate}%`, icon: <Zap className="text-yellow-500" /> },
-        { label: 'Current Streak', value: '12 Days', icon: <Trophy className="text-accent" /> },
+        { label: 'Current Streak', value: `${streak} Day${streak === 1 ? '' : 's'}`, icon: <Trophy className="text-accent" /> },
     ];
 
     const recentCompletions = tasks
@@ -87,14 +109,33 @@ const Profile = () => {
 
         try {
             await copyTextToClipboard(profileUrl);
-            showToast('Profile link copied! \uD83D\uDCCB', { duration: 3000 });
+            showToast('Profile link copied! \uD83D\uDCCB', { duration: 3000, variant: 'info' });
         } catch (error) {
             console.error('Unable to copy the profile URL.', error);
         }
     }, [showToast]);
 
+    useEffect(() => {
+        const handleSecureKeyUp = (event) => {
+            if (event.key === 'PrintScreen') {
+                navigator.clipboard?.writeText('').catch(() => {});
+                window.alert('Screenshots are disabled on this page');
+            }
+        };
+
+        document.addEventListener('keyup', handleSecureKeyUp);
+        document.body.style.userSelect = 'none';
+        document.body.style.webkitUserSelect = 'none';
+
+        return () => {
+            document.removeEventListener('keyup', handleSecureKeyUp);
+            document.body.style.userSelect = '';
+            document.body.style.webkitUserSelect = '';
+        };
+    }, []);
+
     return (
-        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
+        <div className="secure-content space-y-8 animate-in slide-in-from-bottom-4 duration-700">
             {/* Profile Header Card */}
             <Card className="relative overflow-hidden border-none shadow-2xl">
                 <div className="h-40 bg-gradient-to-r from-accent via-indigo-600 to-purple-700"></div>

@@ -7,9 +7,22 @@ import { useTaskContext } from '../context/TaskContext';
 
 const TaskDetailPage = () => {
     const { taskId } = useParams();
-    const { tasks } = useTaskContext();
+    const { tasks, loading } = useTaskContext();
 
     const task = tasks.find((item) => String(item.id) === String(taskId));
+
+    if (loading) {
+        return (
+            <Card className="space-y-6 p-8">
+                <div className="h-8 w-48 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-800" />
+                <div className="h-28 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-900" />
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div className="h-24 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-900" />
+                    <div className="h-24 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-900" />
+                </div>
+            </Card>
+        );
+    }
 
     if (!task) {
         return (
@@ -116,4 +129,3 @@ const TaskDetailPage = () => {
 };
 
 export default TaskDetailPage;
-

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { useModal } from '../hooks/useModal';
 import { Button, Card, Badge } from './ui/Base';
@@ -14,13 +14,32 @@ import {
 } from 'lucide-react';
 
 const TaskTracker = () => {
-    const { tasks, loading, error } = useTaskContext();
+    const { tasks, loading, error, isMutating } = useTaskContext();
     const addModal = useModal(false);
     const editModal = useModal(false);
 
+    useEffect(() => {
+        const handleSecureKeyUp = (event) => {
+            if (event.key === 'PrintScreen') {
+                navigator.clipboard?.writeText('').catch(() => {});
+                window.alert('Screenshots are disabled on this page');
+            }
+        };
+
+        document.addEventListener('keyup', handleSecureKeyUp);
+        document.body.style.userSelect = 'none';
+        document.body.style.webkitUserSelect = 'none';
+
+        return () => {
+            document.removeEventListener('keyup', handleSecureKeyUp);
+            document.body.style.userSelect = '';
+            document.body.style.webkitUserSelect = '';
+        };
+    }, []);
+
     if (loading && tasks.length === 0) return <div className="animate-pulse space-y-6">
         <div className="h-12 bg-gray-200 dark:bg-gray-800 rounded-xl w-1/3"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(4)].map((_, i) => <div key={i} className="h-48 bg-gray-100 dark:bg-gray-800 rounded-3xl"></div>)}
         </div>
     </div>;
@@ -40,19 +59,40 @@ const TaskTracker = () => {
 
     return (
         <TaskListWithRenderProps tasks={tasks}>
-            {({ filteredTasks, filter, sort, setFilter, setSort }) => (
-                <div className="space-y-8 animate-in fade-in duration-500">
+            {({ filteredTasks, filter, sort, setFilter, setSort, resetFilters }) => {
+                const hasActiveFilters = Boolean(
+                    filter.search.trim()
+                    || filter.category !== 'All'
+                    || filter.status !== 'All'
+                    || filter.priority !== 'All'
+                );
+                const isEmptyLibrary = tasks.length === 0;
+                const emptyStateTitle = isEmptyLibrary
+                    ? 'No tasks yet!'
+                    : hasActiveFilters
+                        ? 'No tasks match your search'
+                        : 'No tasks found.';
+                const emptyStateDescription = isEmptyLibrary
+                    ? 'Click + to add your first task'
+                    : 'Try adjusting your filters or add a new task.';
+
+                return (
+                <div className="secure-content space-y-8 animate-in fade-in duration-500">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <h2 className="text-3xl font-bold font-outfit text-gray-900 dark:text-white">Task Tracker</h2>
-                            <p className="text-gray-500 dark:text-gray-400">Manage and organize your journey.</p>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <h2 className="text-3xl font-bold font-outfit text-gray-900 dark:text-white">Task Tracker</h2>
+                                <Badge variant="primary">{tasks.length} total</Badge>
+                                {isMutating && <Badge variant="success">Syncing...</Badge>}
+                            </div>
+                            <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Manage and organize your journey.</p>
                         </div>
                         <Button onClick={() => addModal.open()} size="lg" className="rounded-2xl">
                             <Plus size={20} /> Add New Task
                         </Button>
                     </div>
 
-                    <Card className="flex flex-col gap-4 p-4 md:flex-row md:items-center">
+                    <Card className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:p-6">
                         <div className="relative flex-1 group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-accent" size={18} />
                             <input
@@ -101,6 +141,11 @@ const TaskTracker = () => {
                                     <option key={priority} value={priority}>{priority}</option>
                                 ))}
                             </select>
+                            {hasActiveFilters && (
+                                <Button type="button" variant="ghost" size="sm" onClick={resetFilters}>
+                                    Clear filters
+                                </Button>
+                            )}
                         </div>
                     </Card>
 
@@ -133,7 +178,7 @@ const TaskTracker = () => {
                         </div>
 
                         {filteredTasks.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 {filteredTasks.map((task) => (
                                     <LazyTaskCardCompound
                                         key={task.id}
@@ -144,8 +189,15 @@ const TaskTracker = () => {
                             </div>
                         ) : (
                             <Card className="rounded-3xl border-2 border-dashed border-gray-200 py-20 text-center dark:border-gray-800">
-                                <h3 className="text-xl font-bold font-outfit text-gray-400">No tasks found.</h3>
-                                <p className="mt-1 text-gray-500">Try adjusting your filters or add a new task.</p>
+                                <h3 className="text-xl font-bold font-outfit text-gray-400">{emptyStateTitle}</h3>
+                                <p className="mt-1 text-gray-500">{emptyStateDescription}</p>
+                                {hasActiveFilters && (
+                                    <div className="mt-4">
+                                        <Button type="button" variant="outline" onClick={resetFilters}>
+                                            Reset filters
+                                        </Button>
+                                    </div>
+                                )}
                             </Card>
                         )}
                     </div>
@@ -172,7 +224,8 @@ const TaskTracker = () => {
                         )}
                     </LazyModal>
                 </div>
-            )}
+                );
+            }}
         </TaskListWithRenderProps>
     );
 };

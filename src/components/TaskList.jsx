@@ -1,15 +1,15 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import TaskItem from './TaskItem';
+import TaskCard from './TaskCard';
 import { Layers } from 'lucide-react';
 
-const TaskList = ({ tasks, onEdit }) => {
+const TaskList = React.memo(({ tasks, onEdit }) => {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence mode="popLayout">
                 {tasks.length > 0 ? (
-                    tasks.map(task => (
-                        <TaskItem
+                    tasks.map((task) => (
+                        <TaskCard
                             key={task.id}
                             task={task}
                             onEdit={onEdit}
@@ -29,6 +29,6 @@ const TaskList = ({ tasks, onEdit }) => {
             </AnimatePresence>
         </div>
     );
-};
+});
 
 export default TaskList;

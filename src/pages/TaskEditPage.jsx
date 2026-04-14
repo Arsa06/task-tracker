@@ -8,9 +8,20 @@ import { useTaskContext } from '../context/TaskContext';
 const TaskEditPage = () => {
     const { taskId } = useParams();
     const navigate = useNavigate();
-    const { tasks } = useTaskContext();
+    const { tasks, loading } = useTaskContext();
 
     const task = tasks.find((item) => String(item.id) === String(taskId));
+
+    if (loading) {
+        return (
+            <Card className="p-8">
+                <div className="space-y-4 animate-pulse">
+                    <div className="h-8 w-40 rounded-xl bg-gray-200 dark:bg-gray-800" />
+                    <div className="h-56 rounded-3xl bg-gray-100 dark:bg-gray-900" />
+                </div>
+            </Card>
+        );
+    }
 
     if (!task) {
         return (
@@ -52,4 +63,3 @@ const TaskEditPage = () => {
 };
 
 export default TaskEditPage;
-

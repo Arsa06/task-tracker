@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
     Clock, 
@@ -16,23 +16,39 @@ import { useTaskContext } from '../context/TaskContext';
 
 const TaskItem = React.memo(({ task, onEdit }) => {
     const { deleteTask, toggleTask } = useTaskContext();
-    
-    const isUrgent = task.deadline && !task.completed && 
-                     (isPast(parseISO(task.deadline)) || 
-                      new Date(task.deadline).getTime() - new Date().getTime() < 86400000);
+
+    const isUrgent = task.deadline && !task.completed
+        && (isPast(parseISO(task.deadline))
+        || new Date(task.deadline).getTime() - new Date().getTime() < 86400000);
 
     const priorityColors = {
         High: 'danger',
         Medium: 'warning',
-        Low: 'success'
+        Low: 'success',
     };
 
     const categoryColors = {
         Work: 'bg-blue-500',
         Study: 'bg-indigo-500',
         Personal: 'bg-accent',
-        Health: 'bg-emerald-500'
+        Health: 'bg-emerald-500',
     };
+    const borderColor = task.completed
+        ? 'border-l-gray-400'
+        : task.priority === 'High'
+            ? 'border-l-red-500'
+            : task.priority === 'Medium'
+                ? 'border-l-orange-500'
+                : 'border-l-emerald-500';
+    const handleToggle = useCallback(() => {
+        toggleTask(task);
+    }, [task, toggleTask]);
+    const handleDelete = useCallback(() => {
+        deleteTask(task.id);
+    }, [deleteTask, task.id]);
+    const handleEdit = useCallback(() => {
+        onEdit(task);
+    }, [onEdit, task]);
 
     return (
         <motion.div
@@ -42,14 +58,15 @@ const TaskItem = React.memo(({ task, onEdit }) => {
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
         >
-            <Card className={`group relative p-5 hover:shadow-md border-l-4 overflow-hidden ${
+            <Card className={`group relative overflow-hidden border-l-4 p-5 hover:shadow-md ${
+                borderColor
+            } ${
                 task.completed ? 'opacity-70 grayscale-[0.3]' : ''
-            }`} style={{ borderLeftColor: task.completed ? '#9ca3af' : `var(--accent-color, ${task.priority === 'High' ? '#ef4444' : task.priority === 'Medium' ? '#f59e0b' : '#10b981'})` }}>
-                
+            }`}>
                 <div className="flex gap-4">
                     {/* Completion Toggle */}
-                    <button 
-                        onClick={() => toggleTask(task)}
+                    <button
+                        onClick={handleToggle}
                         role="checkbox"
                         aria-checked={task.completed}
                         aria-label={task.completed ? `Mark ${task.title} as active` : `Mark ${task.title} as completed`}
@@ -67,12 +84,12 @@ const TaskItem = React.memo(({ task, onEdit }) => {
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{task.category}</span>
                             </div>
                             
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     className="p-1.5 h-auto text-gray-400 hover:text-accent"
-                                    onClick={() => onEdit(task)}
+                                    onClick={handleEdit}
                                     aria-label={`Edit ${task.title}`}
                                 >
                                     <Edit2 size={16} />
@@ -81,7 +98,7 @@ const TaskItem = React.memo(({ task, onEdit }) => {
                                     variant="ghost"
                                     size="sm"
                                     className="p-1.5 h-auto text-gray-400 hover:text-red-500"
-                                    onClick={() => deleteTask(task.id)}
+                                    onClick={handleDelete}
                                     aria-label={`Delete ${task.title}`}
                                 >
                                     <Trash2 size={16} />
@@ -116,7 +133,7 @@ const TaskItem = React.memo(({ task, onEdit }) => {
                                 <div className="flex items-center gap-2">
                                     <Tag size={14} className="text-gray-400" />
                                     <div className="flex gap-1">
-                                        {task.tags.map(tag => (
+                                        {task.tags.map((tag) => (
                                             <span key={tag} className="text-[10px] text-gray-400">#{tag}</span>
                                         ))}
                                     </div>

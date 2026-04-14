@@ -31,3 +31,10 @@
     @apply bg-dark-bg text-dark-text;
   }
 }
+
+@layer utilities {
+  .secure-content {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}

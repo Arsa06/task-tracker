@@ -1,17 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-
-const defaultFilterState = {
-    search: '',
-    status: 'All',
-    category: 'All',
-    priority: 'All',
-};
-
-const defaultSortState = {
-    by: 'deadline',
-    direction: 'asc',
-};
+import { FilterContext, defaultFilters, defaultSort } from '../../context/FilterContext';
 
 const priorityWeight = {
     High: 3,
@@ -96,22 +85,51 @@ const TaskListWithRenderProps = ({
     initialFilter,
     initialSort,
 }) => {
-    const [filter, setFilterState] = useState({
-        ...defaultFilterState,
+    const filterContext = useContext(FilterContext);
+    const [localFilter, setLocalFilterState] = useState({
+        ...defaultFilters,
         ...initialFilter,
     });
-    const [sort, setSortState] = useState({
-        ...defaultSortState,
+    const [localSort, setLocalSortState] = useState({
+        ...defaultSort,
         ...initialSort,
     });
+    const filter = filterContext?.filters || localFilter;
+    const sort = filterContext?.sort || localSort;
+
+    const resetFilters = useCallback(() => {
+        if (filterContext?.resetFilters) {
+            filterContext.resetFilters();
+            return;
+        }
+
+        setLocalFilterState({
+            ...defaultFilters,
+            ...initialFilter,
+        });
+        setLocalSortState({
+            ...defaultSort,
+            ...initialSort,
+        });
+    }, [filterContext, initialFilter, initialSort]);
 
     const setFilter = useCallback((nextFilter) => {
-        setFilterState((currentFilter) => normalizeFilterUpdate(currentFilter, nextFilter));
-    }, []);
+        if (filterContext?.setFilter) {
+            filterContext.setFilter(nextFilter);
+            return;
+        }
+
+        setLocalFilterState((currentFilter) => normalizeFilterUpdate(currentFilter, nextFilter));
+    }, [filterContext]);
 
     const setSort = useCallback((nextSort) => {
-        setSortState((currentSort) => normalizeSortUpdate(currentSort, nextSort));
-    }, []);
+        if (filterContext?.setSort) {
+            filterContext.setSort(nextSort);
+            return;
+        }
+
+        setLocalSortState((currentSort) => normalizeSortUpdate(currentSort, nextSort));
+    }, [filterContext]);
 
     const filteredTasks = useMemo(() => {
         const query = filter.search.trim().toLowerCase();
@@ -147,6 +165,7 @@ const TaskListWithRenderProps = ({
         sort,
         setFilter,
         setSort,
+        resetFilters,
     });
 };
 
